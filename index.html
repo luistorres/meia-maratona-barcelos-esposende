@@ -119,15 +119,15 @@
 
     // ─── Components ──────────────────────────────────────────
 
-    function StatCard({ label, value, unit, accent }) {
+    function StatCard({ label, value, unit, accent, fullWidth }) {
       return (
         <div style={{
           background: "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)",
           border: "1px solid rgba(255,255,255,0.06)",
           borderRadius: 16,
-          padding: "20px 24px",
-          minWidth: 140,
-          flex: 1,
+          padding: isMobile ? "14px 18px" : "20px 24px",
+          minWidth: 0,
+          gridColumn: fullWidth ? "1 / -1" : undefined,
         }}>
           <div style={{
             fontSize: 12,
@@ -262,7 +262,7 @@
             <StatCard label="Alt. Maxima" value={STATS.maxElevation} unit="m" accent="#f59e0b" />
             <StatCard label="Alt. Minima" value={STATS.minElevation} unit="m" accent="#8b5cf6" />
             <StatCard label="+Dm Subida" value={STATS.totalAscent} unit="m" accent="#22c55e" />
-            <StatCard label="-Dm Descida" value={STATS.totalDescent} unit="m" accent="#ef4444" />
+            <StatCard label="-Dm Descida" value={STATS.totalDescent} unit="m" accent="#ef4444" fullWidth={isMobile} />
           </div>
 
           {/* Chart */}
