@@ -27,6 +27,9 @@
       justify-content: center;
       padding: 2rem;
     }
+    @media (max-width: 640px) {
+      body { padding: 1rem 0.75rem; }
+    }
     #root { width: 100%; max-width: 1200px; }
     #route-map {
       height: 480px;
@@ -34,6 +37,9 @@
       border: 1px solid rgba(255,255,255,0.06);
       overflow: hidden;
       margin-top: 24px;
+    }
+    @media (max-width: 640px) {
+      #route-map { height: 360px; }
     }
     .leaflet-popup-content-wrapper {
       background: rgba(15,15,25,0.95) !important;
@@ -99,6 +105,17 @@
     const highestPoint = profileData.reduce((max, p) =>
       p.elevation > max.elevation ? p : max
     );
+
+    // ─── Mobile detection ─────────────────────────────────────
+    const isMobile = window.innerWidth < 640;
+
+    const MOBILE_ANNOTATIONS = [
+      "Partida – Av. da Liberdade",
+      "Estação de Barcelos (retorno)",
+      "Central de Camionagem (retorno)",
+      "Rua de São Simão",
+      "Chegada – Esposende",
+    ];
 
     // ─── Components ──────────────────────────────────────────
 
@@ -236,10 +253,10 @@
 
           {/* Stats grid */}
           <div style={{
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(5, 1fr)",
             gap: 12,
             marginBottom: 32,
-            flexWrap: "wrap",
           }}>
             <StatCard label="Distancia" value={STATS.totalDistanceKm} unit="km" accent="#60a5fa" />
             <StatCard label="Alt. Maxima" value={STATS.maxElevation} unit="m" accent="#f59e0b" />
@@ -252,14 +269,17 @@
           <div style={{
             background: "linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 100%)",
             border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 20,
-            padding: "28px 16px 16px 8px",
+            borderRadius: isMobile ? 14 : 20,
+            padding: isMobile ? "16px 4px 8px 0" : "28px 16px 16px 8px",
             position: "relative",
           }}>
-            <ResponsiveContainer width="100%" height={420}>
+            <ResponsiveContainer width="100%" height={isMobile ? 320 : 420}>
               <AreaChart
                 data={profileData}
-                margin={{ top: 60, right: 30, left: 10, bottom: 20 }}
+                margin={isMobile
+                  ? { top: 40, right: 10, left: 0, bottom: 16 }
+                  : { top: 60, right: 30, left: 10, bottom: 20 }
+                }
               >
                 <defs>
                   <linearGradient id="elevGradient" x1="0" y1="0" x2="0" y2="1">
@@ -284,12 +304,12 @@
                   dataKey="distKm"
                   type="number"
                   domain={[0, 21]}
-                  tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 500 }}
+                  tick={{ fill: "rgba(255,255,255,0.3)", fontSize: isMobile ? 9 : 11, fontWeight: 500 }}
                   tickLine={false}
                   axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
-                  ticks={[0, 3, 5, 7, 10, 12, 14, 17, 19, 21]}
+                  ticks={isMobile ? [0, 5, 10, 15, 21] : [0, 3, 5, 7, 10, 12, 14, 17, 19, 21]}
                   tickFormatter={(v) => `${v}`}
-                  label={{
+                  label={isMobile ? undefined : {
                     value: "Distancia (km)",
                     position: "insideBottom",
                     offset: -10,
@@ -299,11 +319,12 @@
 
                 <YAxis
                   domain={[0, 100]}
-                  tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 11, fontWeight: 500 }}
+                  tick={{ fill: "rgba(255,255,255,0.3)", fontSize: isMobile ? 9 : 11, fontWeight: 500 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v) => `${v}m`}
-                  width={45}
+                  ticks={isMobile ? [0, 25, 50, 75, 100] : undefined}
+                  width={isMobile ? 32 : 45}
                 />
 
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: "rgba(255,255,255,0.1)", strokeWidth: 1 }} />
@@ -343,7 +364,9 @@
                 </ReferenceDot>
 
                 {/* Annotation labels */}
-                {annotatedPoints.map((p, i) => {
+                {annotatedPoints
+                  .filter((p) => !isMobile || MOBILE_ANNOTATIONS.includes(p.annotation))
+                  .map((p, i) => {
                   const isStart = p.annotation.includes("Partida");
                   const isFinish = p.annotation.includes("Chegada");
                   const isReturn = p.annotation.includes("retorno") || p.annotation.includes("volta") || p.annotation.includes("subida");
@@ -379,10 +402,10 @@
                       <Label
                         value={label}
                         position="top"
-                        offset={10}
+                        offset={isMobile ? 6 : 10}
                         style={{
                           fill: color,
-                          fontSize: (isStart || isFinish) ? 10 : 9,
+                          fontSize: isMobile ? 8 : ((isStart || isFinish) ? 10 : 9),
                           fontWeight: (isStart || isFinish) ? 700 : 500,
                           letterSpacing: "0.04em",
                         }}
@@ -392,8 +415,8 @@
                   );
                 })}
 
-                {/* 5K markers */}
-                {[5, 10, 15, 20].map((km) => (
+                {/* 5K markers (desktop only) */}
+                {!isMobile && [5, 10, 15, 20].map((km) => (
                   <ReferenceLine
                     key={`km-${km}`}
                     x={km}
@@ -417,11 +440,12 @@
 
           {/* Route waypoints legend */}
           <div style={{
-            marginTop: 24,
+            marginTop: isMobile ? 16 : 24,
             display: "flex",
+            flexDirection: isMobile ? "column" : "row",
             flexWrap: "wrap",
-            gap: "8px 20px",
-            padding: "16px 20px",
+            gap: isMobile ? "6px" : "8px 20px",
+            padding: isMobile ? "12px 14px" : "16px 20px",
             background: "rgba(255,255,255,0.02)",
             border: "1px solid rgba(255,255,255,0.04)",
             borderRadius: 14,
